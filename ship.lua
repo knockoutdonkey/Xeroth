@@ -1,4 +1,5 @@
 local Bullet = require('bullet')
+local Player = require('player')
 local HC = require('HC')
 
 local Ship = {}
@@ -71,6 +72,10 @@ function Ship:boost(dt)
   end
 end
 
+function Ship:eject()
+  Player:new(self.x, self.y, self.angle, self)
+end
+
 function Ship:restart()
   self.x = 0
   self.y = 0
@@ -88,7 +93,12 @@ function Ship:bounceOff(x, y)
 
   local norm = math.sqrt(normX * normX + normY * normY)
   local speed = math.sqrt(self.vx * self.vx + self.vy * self.vy)
-  print(norm)
+
+  -- if speed < 10 then
+  --   self.vx = 0
+  --   self.vy = 0
+  --   return
+  -- end
 
   local normalizedX = normX * speed / norm
   local normalizedY = normY * speed / norm
@@ -101,6 +111,22 @@ function Ship:bounceOff(x, y)
 end
 
 function Ship:update(dt)
+
+  -- apply gravity
+  for key, planet in pairs(Planet.planets) do
+    if planet then
+      local k = 400 * planet.radius * planet.radius
+      local diffX = (planet.x - self.x)
+      local diffY = (planet.y - self.y)
+      local diff = math.sqrt(diffX * diffX + diffY * diffY)
+      local force = k / (diff * diff)
+      local forceX = force * diffX / diff
+      local forceY = force * diffY / diff
+      self.vx = self.vx + forceX * dt
+      self.vy = self.vy + forceY * dt
+    end
+  end
+
   -- check for collisions
   for shape, delta in pairs(HC.collisions(self.body)) do
     if shape.tag == 'asteroid' then
@@ -122,7 +148,6 @@ function Ship:draw()
   local shipWidth = self.img:getWidth()
   local shipHeight = self.img:getHeight()
   love.graphics.draw(self.img, self.x, self.y, self.angle, 1, 1, shipWidth / 2, shipHeight / 2)
-
 end
 
 return Ship

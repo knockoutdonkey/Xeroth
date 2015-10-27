@@ -37,7 +37,7 @@ function Sector:placeEntities()
 
   local x = math.random(self.width * (self.x - .5), self.width * (self.x + .5))
   local y = math.random(self.height * (self.y - .5), self.height * (self.y + .5))
-  local radius = math.random(100, 250)
+  local radius = math.random(170, 400)
 
   Planet:new(x, y, radius)
 end

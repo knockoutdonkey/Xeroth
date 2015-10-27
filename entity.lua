@@ -17,7 +17,7 @@ function Entity:new(x, y, body, vx, vy, angle)
   obj.body = body
   obj.vx = vx or 0
   obj.vy = vy or 0
-  obj.angle = obj.angle or 0
+  obj.angle = angle or 0
 
   obj.id = currentId
   obj.body.id = obj.id

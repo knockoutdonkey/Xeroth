@@ -3,6 +3,7 @@ local Entity = require('entity')
 local Sector = require('sector')
 local Ship = require('ship')
 local Planet = require('planet')
+local Player = require('player')
 
 local sectors = {}
 for y = -1, 1 do
@@ -23,37 +24,79 @@ local camera = {
 function love.load(arg)
 
   ship = Ship:new()
-  ship.img = love.graphics.newImage( 'player.png' )
-  -- ship.img:setFilter( 'nearest', 'nearest' )
+  ship.img = love.graphics.newImage('ship.png')
+  -- ship.img:setFilter('nearest', 'nearest')
+
+  PlayerImage = love.graphics.newImage('player.png')
 
   love.window.setMode( 800, 800 )
 end
+
+local ePressed = false
 
 function love.update(dt)
 
   -- input
   if love.keyboard.isDown('w', 'up') then
-    ship:moveForward(dt)
+    if Player.instance then
+      Player.instance:jump()
+    else
+      ship:moveForward(dt)
+    end
   end
 
   if love.keyboard.isDown('s', 'down') then
-    ship:moveBackward(dt)
+    if Player.instance then
+
+    else
+      ship:moveBackward(dt)
+    end
   end
 
   if love.keyboard.isDown('right', 'd') then
-    ship:turnRight(dt)
+    if Player.instance then
+      Player.instance:moveRight(dt)
+    else
+      ship:turnRight(dt)
+    end
   end
 
   if love.keyboard.isDown('left', 'a') then
-    ship:turnLeft(dt)
+    if Player.instance then
+      Player.instance:moveLeft(dt)
+    else
+      ship:turnLeft(dt)
+    end
   end
 
   if love.keyboard.isDown('b') then
-    ship:boost(dt)
+    if Player.instance then
+
+    else
+      ship:boost(dt)
+    end
   end
 
   if love.keyboard.isDown(' ') then
-    ship:shoot(dt)
+    if Player.instance then
+      Player.instance:jump()
+    else
+      ship:shoot(dt)
+    end
+  end
+
+  if love.keyboard.isDown('e') then
+
+    if not ePressed then
+      if Player.instance then
+        Player.instance:enterShip()
+      else
+        ship:eject()
+      end
+    end
+    ePressed = true
+  else
+    ePressed = false
   end
 
   -- create any new sectors
@@ -77,30 +120,41 @@ function love.update(dt)
     end
   end
 
-  -- apply gravity
-  for key, planet in pairs(Planet.planets) do
-    if planet then
-      local k = 200 * planet.radius * planet.radius
-      local diffX = (planet.x - ship.x)
-      local diffY = (planet.y - ship.y)
-      local diff = math.sqrt(diffX * diffX + diffY * diffY)
-      local force = k / (diff * diff)
-      local forceX = force * diffX / diff
-      local forceY = force * diffY / diff
-      ship.vx = ship.vx + forceX * dt
-      ship.vy = ship.vy + forceY * dt
-    end
-  end
-
   -- iterate physics
   ship:update(dt)
   Entity:updateAll(dt)
 
-  camera.angle = camera.angle + 5 * (ship.angle - camera.angle) * dt
+  -- update camera
+  if Player.instance then
+    camera.x = Player.instance.x
+    camera.y = Player.instance.y
+
+    while Player.instance.angle - camera.angle > math.pi do
+      camera.angle = camera.angle + 2 * math.pi
+    end
+
+    while Player.instance.angle - camera.angle < - math.pi do
+      camera.angle = camera.angle - 2  * math.pi
+    end
+    camera.angle = camera.angle + 5 * (Player.instance.angle - camera.angle) * dt
+    print(camera.angle)
+  else
+    camera.x = ship.x
+    camera.y = ship.y
+
+    while ship.angle - camera.angle > math.pi do
+      camera.angle = camera.angle + 2 * math.pi
+    end
+
+    while ship.angle - camera.angle < - math.pi do
+      camera.angle = camera.angle - 2  * math.pi
+    end
+    camera.angle = camera.angle + 5 * (ship.angle - camera.angle) * dt
+    print(camera.angle)
+  end
 end
 
 function love.draw(dt)
-
 
   -- draw the camera
   local screenWidth = love.graphics:getWidth()
@@ -108,7 +162,7 @@ function love.draw(dt)
 
   love.graphics.translate(screenWidth / 2, screenHeigth / 2)
   love.graphics.rotate(-camera.angle)
-  love.graphics.translate(-ship.x, -ship.y)
+  love.graphics.translate(-camera.x, -camera.y)
 
   -- draw the ship
   ship:draw()
